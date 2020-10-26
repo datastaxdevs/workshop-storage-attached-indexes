@@ -94,7 +94,7 @@ For a **non-technical introduction** to **SAI**, have a look at this [recent blo
 
 To learn more about **SAI** from a **technical perspective**, have a look at our [docs on SAI](https://docs.datastax.com/en/storage-attached-index/6.8/sai/saiQuickStart.html). Honestly, these docs are pretty great IMO especially the [SAI FAQ](https://docs.datastax.com/en/storage-attached-index/6.8/sai/saiFaqs.html). Definitely take a moment to read through these to get a better understanding of how all of this works and even more examples on top of what we are presenting in this repo.
 
-Now, let's get into some examples. The first thing we'll need is a table and some data to work with. For that we need to talk about my dentist, or really a contrived example of a client data model a dentist might need to use.
+Now, let's get into some examples. The first thing we'll need is a table and some data to work with. For that we need to talk about my dentist, or really, a contrived example of a client data model a dentist might need to use.
 
 **✅ Step 2a. Navigate to the CQL Console and login to the database**
 
@@ -198,7 +198,7 @@ INSERT INTO clients (uniqueid, firstname, lastname, birthday, nextappt, newpatie
 VALUES (F4DB7673-CA4E-4382-BDCD-2C1704363590, 'John-Henry', 'Huckleberry', '1979-11-16', '2020-10-21 14:00:00', false, 'imageurl');
 ```
 
-**✅ Step 2d. Create a _`clients`_ table and insert some data**
+**✅ Step 2d. Verify data exists**
 
 Now let's take a look at the data we just inserted.
 
