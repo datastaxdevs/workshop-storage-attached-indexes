@@ -197,6 +197,13 @@ VALUES (B9DB7E99-AD1C-49B1-97C6-87154663AEF4, 'Herb', 'Huckleberry', '1990-07-09
 
 INSERT INTO clients (uniqueid, firstname, lastname, birthday, nextappt, newpatient, photo) 
 VALUES (F4DB7673-CA4E-4382-BDCD-2C1704363590, 'John-Henry', 'Huckleberry', '1979-11-16', '2020-10-21 14:00:00', false, 'imageurl');
+
+INSERT INTO clients (uniqueid, firstname, lastname, birthday, nextappt, newpatient, photo) 
+VALUES (F4DB7673-CA4E-4382-BDCD-2C1704363595, 'Sven', 'Åskådare', '1967-11-07', '2020-10-21 14:00:00', false, 'imageurl');
+
+'Åskådare'
+'Åskådare'
+'Åskådare'
 ```
 
 **✅ Step 2d. Verify data exists**
@@ -324,7 +331,15 @@ Well, [case_sensitive](https://docs.datastax.com/en/dse/6.8/cql/cql/cql_referenc
 
 This is why I kept varying the case used in our queries above. You could NOT have done does this with a traditional Cassandra query.
 
-How about [normalize](https://docs.datastax.com/en/dse/6.8/cql/cql/cql_reference/cql_commands/cqlCreateCustomIndex.html#cqlCreateCustomIndex__cqlCreateCustomIndexOptions)? Basically, this means that special characters, like vowels with diacritics should be indexed as the base letter only, which also makes things easier to match. The actual value is stored in the table record.
+How about [normalize](https://docs.datastax.com/en/dse/6.8/cql/cql/cql_reference/cql_commands/cqlCreateCustomIndex.html#cqlCreateCustomIndex__cqlCreateCustomIndexOptions)? Basically, this means that special characters, like vowels with diacritics should be indexed as the base letter only, which also makes things easier to match. The actual value is stored in the table record. An example is to insert code that uses `Å (U+212B)` and SELECT code that uses `Å (U+00C5)`. 
+
+📘 **Command to execute**
+
+```SQL
+SELECT * FROM clients WHERE lastname = 'Åskådare';
+```
+
+_To be clear, this is not Ascii folding where I might insert code that uses `é` and a select using `e`. This is coming as a future feature._
 
 To sum up, we queried against a combination of string and date fields using exact matches, multiple string cases, and date ranges. Just by adding an index on 3 fields we significantly expanded the flexibility of our data model.
 
@@ -332,9 +347,11 @@ To sum up, we queried against a combination of string and date fields using exac
 
 Imagine a case where we now have a requirement to find clients based off of their next appointment. 
 
-Prior to **SAI**, if I wanted to accomplish this same thing in Cassandra, I would set up a new table using the **date** as the **partition key**, and I'd probably have the **appointment** slots as a **clustering column**, along with the uniqueid rounding out the primary key. 
+Prior to **SAI**, if I wanted to accomplish this same thing in Cassandra, I would set up a new table using the **date** as the **partition key**, and I'd probably have the **appointment** slots as a **clustering column**, along with the **`uniqueid`** rounding out the primary key. 
 
-Then, I would retrieve the days partition to get a list of the appointments for the day. Now, I have **two tables** that I need to worry about to support that query. Let's see what this looks like with **SAI**.
+Then, I would retrieve the days partition to get a list of the appointments for the day. Now, I have **two tables** that I need to worry about to support that query. 
+
+Let's see what this looks like with **SAI**.
 
 📘 **Command to execute**
 ```SQL
@@ -352,4 +369,4 @@ SELECT * FROM clients WHERE nextappt > '2020-10-20 09:00:00';
 
 [🏠 Back to Table of Contents](#table-of-contents)
 
-## 3. IoT sensor data model use case 
+## 3. IoT sensor data model use case
