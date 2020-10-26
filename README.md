@@ -200,10 +200,6 @@ VALUES (F4DB7673-CA4E-4382-BDCD-2C1704363590, 'John-Henry', 'Huckleberry', '1979
 
 INSERT INTO clients (uniqueid, firstname, lastname, birthday, nextappt, newpatient, photo) 
 VALUES (F4DB7673-CA4E-4382-BDCD-2C1704363595, 'Sven', 'Åskådare', '1967-11-07', '2020-10-21 14:00:00', false, 'imageurl');
-
-'Åskådare'
-'Åskådare'
-'Åskådare'
 ```
 
 **✅ Step 2d. Verify data exists**
@@ -331,7 +327,9 @@ Well, [case_sensitive](https://docs.datastax.com/en/dse/6.8/cql/cql/cql_referenc
 
 This is why I kept varying the case used in our queries above. You could NOT have done does this with a traditional Cassandra query.
 
-How about [normalize](https://docs.datastax.com/en/dse/6.8/cql/cql/cql_reference/cql_commands/cqlCreateCustomIndex.html#cqlCreateCustomIndex__cqlCreateCustomIndexOptions)? Basically, this means that special characters, like vowels with diacritics should be indexed as the base letter only, which also makes things easier to match. The actual value is stored in the table record. An example is to insert code that uses `Å (U+212B)` and SELECT code that uses `Å (U+00C5)`. 
+How about [normalize](https://docs.datastax.com/en/dse/6.8/cql/cql/cql_reference/cql_commands/cqlCreateCustomIndex.html#cqlCreateCustomIndex__cqlCreateCustomIndexOptions)? Basically, this means that special characters, like vowels with diacritics can be represented by multiple binary representations for the same character, which also makes things easier to match. 
+
+An example would be a row with a column value that contained the character `Å (U+212B)`.  With **normalize** enabled a query that used the character `Å (U+00C5)` would find that row. This saves from the need to find all unicode variations for a single character.
 
 📘 **Command to execute**
 
