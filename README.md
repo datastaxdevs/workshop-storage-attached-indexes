@@ -26,6 +26,7 @@ It doesn't matter if you join our workshop live or you prefer to do at your own 
 | **Slide deck** | [Slide deck for the workshop](slides/Presentation.pdf) |
 | **1. Create your Astra instance** | [Create your Astra instance](#1-create-your-astra-instance) |
 | **2. Getting started with SAI** | [Getting started with SAI](#2-getting-started-with-sai-(storage-attached-index)) |
+| **3. IoT sensor data model use case** | [IoT sensor data model use case](#3-iot-sensor-data-model-use-case) |
 
 
 
@@ -230,3 +231,109 @@ WITH OPTIONS = {'case_sensitive': false, 'normalize': true };
 CREATE CUSTOM INDEX IF NOT EXISTS ON clients(birthday) USING 'StorageAttachedIndex';
 ```
 
+**✅ Step 2f. Execute queries that use firstname, lastname, and birthday using our indexes**
+
+Remember, the **`clients`** table data model only includes **`uniqueid`** in the primary key. In the traditional Cassandra sense I can only query against the **`uniqueid`** column in the **WHERE** clause. However, with our **SAIndexes** now added we can do a lot more.
+
+📘 **Command to execute**
+```SQL
+// Look for a client by ONLY their lastname. Notice the case used.
+SELECT * FROM clients WHERE lastname = 'Apple';
+```
+
+📗 **Expected output**
+
+![clients where lastname](https://user-images.githubusercontent.com/23346205/97198417-25f78600-1785-11eb-8632-9a7d30456ec4.png)
+
+📘 **Command to execute**
+```SQL
+// Look for a client by their lastname and firstname. Notice the case used.
+SELECT * FROM clients WHERE lastname = 'apple' AND firstname = 'alice';
+```
+
+📗 **Expected output**
+
+![clients where firstname and lastname](https://user-images.githubusercontent.com/23346205/97198713-871f5980-1785-11eb-8416-bd595a70bf6d.png)
+
+📘 **Command to execute**
+```SQL
+// Look for a client by an exact match to their birthday.
+SELECT * FROM clients WHERE birthday = '1984-01-24';
+```
+
+📗 **Expected output**
+
+![clients where birthday](https://user-images.githubusercontent.com/23346205/97198969-d9607a80-1785-11eb-8a5a-f754995634f1.png)
+
+📘 **Command to execute**
+```SQL
+// Look for a client by a range match for the year of their birthday.
+SELECT * FROM clients WHERE birthday > '1984-01-01' AND birthday < '1985-01-01';
+```
+
+📗 **Expected output**
+
+![clients where birthday range](https://user-images.githubusercontent.com/23346205/97199744-baaeb380-1786-11eb-829d-5e05d99d4ba5.png)
+
+📘 **Command to execute**
+```SQL
+// Look for a client by their firstname 
+// and a range match for the year of their birthday. Again, notice the case used.
+SELECT * FROM clients 
+WHERE firstname = 'aLicE'
+AND birthday > '1984-01-01' AND birthday < '1985-01-01';
+```
+
+📗 **Expected output**
+
+![clients where name and birthday range](https://user-images.githubusercontent.com/23346205/97200012-0f522e80-1787-11eb-8aa9-d3c22049dd4b.png)
+
+📘 **Command to execute**
+```SQL
+// Look for a client by their firstname 
+// and a range match for the year of their birthday. Again, notice the case used.
+SELECT * FROM clients 
+WHERE firstname = 'aLicE'
+```
+
+📗 **Expected output**
+
+![clients where name and birthday range](https://user-images.githubusercontent.com/23346205/97200012-0f522e80-1787-11eb-8aa9-d3c22049dd4b.png)
+
+**✅ Step 2g. Digest everything we just did there**
+
+Ok, so let's break that all down. I said earlier when we created the indexes I would explain the options included with some of the indexes. 
+```SQL
+WITH OPTIONS = {'case_sensitive': false, 'normalize': true };
+```
+So what does the **“WITH OPTIONS”** part mean? 
+
+Well, [case_sensitive](https://docs.datastax.com/en/dse/6.8/cql/cql/cql_reference/cql_commands/cqlCreateCustomIndex.html#cqlCreateCustomIndex__cqlCreateCustomIndexOptions) is fairly straightforward. Setting this **false** allows us to match any combination of case for the terms we are querying against, **firstname** or **lastname** fields according to the indexes we created. This is why I kept varying the case used in our queries above. You could NOT have done does this with a traditional Cassandra query.
+
+How about [normalize](https://docs.datastax.com/en/dse/6.8/cql/cql/cql_reference/cql_commands/cqlCreateCustomIndex.html#cqlCreateCustomIndex__cqlCreateCustomIndexOptions)? Basically, this means that special characters, like vowels with diacritics should be indexed as the base letter only, which also makes things easier to match. The actual value is stored in the table record.
+
+**✅ Step 2h. Add another index to support a new data model requirement**
+
+Imagine a case where we now have a requirement to find clients based off of their next appointment. 
+
+Prior to **SAI**, if I wanted to accomplish this same thing in Cassandra, I would set up a new table using the **date** as the **partition key**, and I'd probably have the **appointment** slots as a **clustering column**, along with the uniqueid rounding out the primary key. 
+
+Then, I would retrieve the days partition to get a list of the appointments for the day. Now, I have **two tables** that I need to worry about to support that query. Let's see what this looks like with **SAI**.
+
+📘 **Command to execute**
+```SQL
+CREATE CUSTOM INDEX IF NOT EXISTS ON clients(nextappt) USING 'StorageAttachedIndex';
+```
+
+📘 **Command to execute**
+```SQL
+SELECT * FROM clients WHERE nextappt > '2020-10-20 09:00:00';
+```
+
+📗 **Expected output**
+
+![clients where nextappt](https://user-images.githubusercontent.com/23346205/97206362-01081080-178f-11eb-8b7d-6b002da6f9fb.png)
+
+[🏠 Back to Table of Contents](#table-of-contents)
+
+## 3. IoT sensor data model use case 
