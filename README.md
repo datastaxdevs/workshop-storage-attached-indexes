@@ -320,9 +320,13 @@ WITH OPTIONS = {'case_sensitive': false, 'normalize': true };
 ```
 So what does the **“WITH OPTIONS”** part mean? 
 
-Well, [case_sensitive](https://docs.datastax.com/en/dse/6.8/cql/cql/cql_reference/cql_commands/cqlCreateCustomIndex.html#cqlCreateCustomIndex__cqlCreateCustomIndexOptions) is fairly straightforward. Setting this **false** allows us to match any combination of case for the terms we are querying against, **firstname** or **lastname** fields according to the indexes we created. This is why I kept varying the case used in our queries above. You could NOT have done does this with a traditional Cassandra query.
+Well, [case_sensitive](https://docs.datastax.com/en/dse/6.8/cql/cql/cql_reference/cql_commands/cqlCreateCustomIndex.html#cqlCreateCustomIndex__cqlCreateCustomIndexOptions) is fairly straightforward. Setting this **false** allows us to match any combination of case for the terms we are querying against, **firstname** or **lastname** fields according to the indexes we created. 
+
+This is why I kept varying the case used in our queries above. You could NOT have done does this with a traditional Cassandra query.
 
 How about [normalize](https://docs.datastax.com/en/dse/6.8/cql/cql/cql_reference/cql_commands/cqlCreateCustomIndex.html#cqlCreateCustomIndex__cqlCreateCustomIndexOptions)? Basically, this means that special characters, like vowels with diacritics should be indexed as the base letter only, which also makes things easier to match. The actual value is stored in the table record.
+
+To sum up, we queried against a combination of string and date fields using exact matches, multiple string cases, and date ranges. Just by adding an index on 3 fields we significantly expanded the flexibility of our data model.
 
 **✅ Step 2h. Add another index to support a new data model requirement**
 
