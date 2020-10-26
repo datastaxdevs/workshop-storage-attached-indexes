@@ -216,6 +216,18 @@ SELECT * FROM clients;
 
 Ok great, we have data in our table, but remember we used **_`uniqueid`_** as our **primary key** when we created the table. If we want to query a single patient, we'd have to do that by the **_`uniqueid`_** column because that's our **partition key** _(don't forget, a single value in the primary key is always the partition key)_. 
 
+As a matter of fact, let's try an example. Let's say I want to find a user by their lastname. 
+
+📘 **Command to execute**
+```SQL
+SELECT * FROM clients WHERE lastname = 'Apple';
+```
+📗 **Expected output**
+
+![clients where lastname allow filtering](https://user-images.githubusercontent.com/23346205/97208146-33b30880-1791-11eb-8470-13b6381de70e.png)
+
+Right, the database is telling me here I **CANNOT** query against the **lastname** column because it is NOT in my primary key **_`uniqueid`_**.
+
 But how would we search for users outside of using their unique ID's? We need to look for clients based on information they give us when they walk in the office. Namely, information like first and last name, or birthdate. Maybe a combination of those. Let's set up some indexes to do that.
 
 _Don't worry about options in the below statements just yet. We'll get to that. For now, just execute the commands to create your indexes._
