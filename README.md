@@ -25,7 +25,7 @@ It doesn't matter if you join our workshop live or you prefer to do at your own 
 |---|---|
 | **Slide deck** | [Slide deck for the workshop](slides/Presentation.pdf) |
 | **1. Create your Astra instance** | [Create your Astra instance](#1-create-your-astra-instance) |
-| **2. Getting started with SAI** | [Getting started with SAI](#2-getting-started-with-sai-(storage-attached-index)) |
+| **2. Getting started with SAI** | [Getting started with SAI](#2-getting-started-with-sai-storage-attached-index) |
 | **3. IoT sensor data model use case** | [IoT sensor data model use case](#3-iot-sensor-data-model-use-case) |
 
 
