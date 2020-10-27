@@ -373,6 +373,26 @@ If this table is instead organized to be physically efficient for querying, then
 
 In this case, the **user was stuck with option 1**, because **it was cheaper to store more data than it was to have the compute resources for all of that extra query power for the 20x read workload that was required just to check to see if a sensor reading was already in the database.**
 
+For this section we will continue by using [this Studio notebook](SA_Index_Workshop.tar) in Astra. Please right-click on the link provided and choose **Copy Link Address**. From there, follow the instructions to import into Astra.
+
+Click on the **`Studio`** tab within your Astra console.
+![astra use studio](https://user-images.githubusercontent.com/23346205/97359835-c3c97e80-1873-11eb-82a7-2d6ce63d04f3.png)
+
+This will launch **Studio** in a new tab.
+
+Click the **`+`** icon to import a notebook.
+![studio import notebooks](https://user-images.githubusercontent.com/23346205/97360192-3c303f80-1874-11eb-97c1-10d610c93f8c.png)
+
+Choose **`IMPORT FROM URL`**.
+![import from url](https://user-images.githubusercontent.com/23346205/97360504-ae088900-1874-11eb-94ca-1157295169de.png)
+
+Paste in the link address you copied and click **`Import`**.
+![import from url with link](https://user-images.githubusercontent.com/23346205/97360803-0dff2f80-1875-11eb-87a4-eb365d951969.png)
+
+From there the notebook will be imported and opened automatically. Navigate down to Section **3. IoT sensor data model use case** to continue on.
+![view studio notebook](https://user-images.githubusercontent.com/23346205/97361093-74844d80-1875-11eb-9d11-ceecc64dd1f7.png)
+
+<!--
 **✅ Step 3a. Create our `sensordata` table**
 
 - This table will create a partition for every hour of every day for each location.
@@ -509,3 +529,5 @@ AND dayhour = '2020-10-20 01:00:00';
 📗 **Expected output**
 
 ![sensordata where device_name](https://user-images.githubusercontent.com/23346205/97318153-f2c6fc80-1841-11eb-8c77-9aefed902d61.png)
+
+-->
