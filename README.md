@@ -303,18 +303,6 @@ AND birthday > '1984-01-01' AND birthday < '1985-01-01';
 
 ![clients where name and birthday range](https://user-images.githubusercontent.com/23346205/97200012-0f522e80-1787-11eb-8aa9-d3c22049dd4b.png)
 
-📘 **Command to execute**
-```SQL
-// Look for a client by their firstname 
-// and a range match for the year of their birthday. Again, notice the case used.
-SELECT * FROM clients 
-WHERE firstname = 'aLicE'
-```
-
-📗 **Expected output**
-
-![clients where name and birthday range](https://user-images.githubusercontent.com/23346205/97200012-0f522e80-1787-11eb-8aa9-d3c22049dd4b.png)
-
 **✅ Step 2g. Digest everything we just did there**
 
 Ok, so let's break that all down. I said earlier when we created the indexes I would explain the options included with some of the indexes. 
@@ -340,6 +328,8 @@ SELECT * FROM clients WHERE lastname = 'Åskådare';
 _To be clear, this is not Ascii folding where I might insert code that uses `é` and a select using `e`. This is coming as a future feature._
 
 To sum up, we queried against a combination of string and date fields using exact matches, multiple string cases, and date ranges. Just by adding an index on 3 fields we significantly expanded the flexibility of our data model.
+
+Let's do more.
 
 **✅ Step 2h. Add another index to support a new data model requirement**
 
