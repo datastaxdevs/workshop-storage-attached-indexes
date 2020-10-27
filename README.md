@@ -313,7 +313,7 @@ So what does the **“WITH OPTIONS”** part mean?
 
 Well, [case_sensitive](https://docs.datastax.com/en/dse/6.8/cql/cql/cql_reference/cql_commands/cqlCreateCustomIndex.html#cqlCreateCustomIndex__cqlCreateCustomIndexOptions) is fairly straightforward. Setting this **false** allows us to match any combination of case for the terms we are querying against, **firstname** or **lastname** fields according to the indexes we created. 
 
-This is why I kept varying the case used in our queries above. You could NOT have done does this with a traditional Cassandra query.
+This is why I kept varying the case used in our queries above. You could **NOT** have done does this with a traditional Cassandra query.
 
 How about [normalize](https://docs.datastax.com/en/dse/6.8/cql/cql/cql_reference/cql_commands/cqlCreateCustomIndex.html#cqlCreateCustomIndex__cqlCreateCustomIndexOptions)? Basically, this means that special characters, like vowels with diacritics can be represented by multiple binary representations for the same character, which also makes things easier to match. 
 
@@ -358,3 +358,153 @@ SELECT * FROM clients WHERE nextappt > '2020-10-20 09:00:00';
 [🏠 Back to Table of Contents](#table-of-contents)
 
 ## 3. IoT sensor data model use case
+Time to swtich gears to a real IoT data model use case. 
+
+In the following case, an organization recieved a feed of sensor data that always included all of the fields that the sensor kept track of, even if those fields hadn't changed since the last reading. 
+
+**All of the data was sent whenever a single field changed values.**
+
+Now, this isn't necessarily something that has to be difficult to deal with, if all of the key fields are the same, **we can easily overwrite redundant data without doing a read-before-write** and all of that non-changing, redundant data will just compact away.
+
+But, a **problem arises** if we need to **query** based on **something other than the primary key**.
+
+If this table is instead organized to be physically efficient for querying, then I may not be able to easily upsert the data from the sensor without 1) creating a lot of unnecessary records, or 2) being forced to do a read-before-write to check if a record already exists. 
+
+In this case, the **user was stuck with option 1**, because **it was cheaper to store more data than it was to have the compute resources for all of that extra query power for the 20x read workload that was required just to check to see if a sensor reading was already in the database.**
+
+**✅ Step 3a. Create our `sensordata` table**
+
+- This table will create a partition for every hour of every day for each location.
+- In this case, we have between 1,000 and 10,000 locations, and there are potentially dozens of devices per location.
+- The **`updated`** **STATIC** column will show the last time that the values in **`payload`** were updated that hour.
+- As hours go by, we will naturally create a snapshot of the last hour.
+- This might be undesirable if I didn't know that 
+- I get at least one sensor payload per hour unless a device is offline.
+
+📘 **Command to execute**
+```SQL
+CREATE TABLE sensordata (
+    location text,
+    dayhour timestamp,
+    device_id text,
+    device_name text,
+    updated timestamp STATIC,
+    payload map<text,text>,
+    PRIMARY KEY ((location, dayhour), device_id)
+) WITH CLUSTERING ORDER BY (device_id ASC);
+```
+
+**✅ Step 3b. Create indexes to address query needs outside of our primary key**
+
+OK, so this table organizes the data the way we want it to be space efficient, and it gets rid of redundant records by virtue of the physical organziation that it creates on disk. 
+
+We get the snapshot view that we want each hour, and if most of the values in “payload” don't change over the course an hour, then we avoid both having to do a read before write, and we avoid storing extra copies of that data. 
+
+Where does **SAI** come into the picture? Well, the trick is that queries against this data use the non-unique **`device_name`** field along with the **`dayhour`** that we're looking for, but we also sometimes need to query by the key in the **`payload`** map. 
+
+Being able to query with those inputs, and also organize the data as efficiently as we can is nearly impossible without **SAI**. 
+
+Let's look at the indexes we need to make as well as load some sample data that we can query.
+
+📘 **Commands to execute**
+```SQL
+CREATE CUSTOM INDEX IF NOT EXISTS ON sensordata(device_name) USING 'StorageAttachedIndex'
+WITH OPTIONS = {'case_sensitive': false, 'normalize': true };
+
+CREATE CUSTOM INDEX IF NOT EXISTS ON sensordata(dayhour) USING 'StorageAttachedIndex';
+
+CREATE CUSTOM INDEX IF NOT EXISTS ON sensordata(keys(payload)) USING 'StorageAttachedIndex' 
+WITH OPTIONS = {'case_sensitive': false, 'normalize': true };
+```
+
+_That last **CREATE CUSTOM INDEX** command uses the [keys()](https://docs.datastax.com/en/storage-attached-index/6.8/sai/saiUsing.html#SAIcollectionmapexampleswithkeys,values,andentries) function to index only the map keys in the **payload** map. That lets us **search for entries** with a **specific key name**, which in this case allows us to query for a particular sensor reading._ 
+
+So, now that we have our table structure, let's load some data and query it.
+
+**✅ Step 3c. Insert data**
+
+_Note that the UUIDs here are only increasing by one because it's an expedient thing to do when manually generating data, in the real world, don't do that._
+
+📘 **Commands to execute**
+```SQL
+INSERT INTO sensordata(location, dayhour, device_id, device_name, updated, payload)
+VALUES('ABC','2020-10-20 01:00:00','87C5EFE5-1849-4C0B-BBCD-F4FB84F6FB78','device1','2020-10-20 01:30:00',{'temp':'freezing!', 'humidity':'low'});
+
+INSERT INTO sensordata(location, dayhour, device_id, device_name, updated, payload)
+VALUES('ABC','2020-10-20 01:00:00','87C5EFE5-1849-4C0B-BBCD-F4FB84F6FB79','device1','2020-10-20 01:31:00',{'temp':'freezing!', 'humidity':'low', 'mood':'hungry'});
+
+INSERT INTO sensordata(location, dayhour, device_id, device_name, updated, payload)
+VALUES('ABC','2020-10-20 01:00:00','87C5EFE5-1849-4C0B-BBCD-F4FB84F6FB79','device1','2020-10-20 01:32:00',{'temp':'freezing!', 'humidity':'low', 'mood':'full'});
+
+INSERT INTO sensordata(location, dayhour, device_id, device_name, updated, payload)
+VALUES('ABC','2020-10-20 02:00:00','87C5EFE5-1849-4C0B-BBCD-F4FB84F6FB80','device2','2020-10-20 02:30:00',{'speed':'stopped', 'color':'blue'});
+
+INSERT INTO sensordata(location, dayhour, device_id, device_name, updated, payload)
+VALUES('ABC','2020-10-20 03:00:00','87C5EFE5-1849-4C0B-BBCD-F4FB84F6FB81','device2','2020-10-20 03:30:00',{'speed':'slow', 'color':'blue'});
+
+INSERT INTO sensordata(location, dayhour, device_id, device_name, updated, payload)
+VALUES('DEF','2020-10-20 00:00:00','87C5EFE5-1849-4C0B-BBCD-F4FB84F6FB82','dev1','2020-10-20 00:30:00',{'temp':'hot!', 'humidity':'sticky'});
+
+INSERT INTO sensordata(location, dayhour, device_id, device_name, updated, payload)
+VALUES('DEF','2020-10-20 01:00:00','87C5EFE5-1849-4C0B-BBCD-F4FB84F6FB83','dev2','2020-10-20 01:30:00',{'temp':'warm', 'humidity':'muggy'});
+
+INSERT INTO sensordata(location, dayhour, device_id, device_name, updated, payload)
+VALUES('DEF','2020-10-20 02:00:00','87C5EFE5-1849-4C0B-BBCD-F4FB84F6FB84','dev3','2020-10-20 02:30:00',{'temp':'freezing!', 'humidity':'my beard is growing icicles'});
+
+INSERT INTO sensordata(location, dayhour, device_id, device_name, updated, payload)
+VALUES('GHI','2020-10-20 00:00:00','87C5EFE5-1849-4C0B-BBCD-F4FB84F6FB85','doohickey','2020-10-20 00:30:00',{'temp':'hot!', 'humidity':'dry', 'orientation':'rightside up'});
+
+INSERT INTO sensordata(location, dayhour, device_id, device_name, updated, payload)
+VALUES('GHI','2020-10-20 01:00:00','87C5EFE5-1849-4C0B-BBCD-F4FB84F6FB86','doohickey','2020-10-20 01:30:00',{'temp':'hot!', 'humidity':'dry', 'orientation':'upside down'});
+
+INSERT INTO sensordata(location, dayhour, device_id, device_name, updated, payload)
+VALUES('GHI','2020-10-20 02:00:00','87C5EFE5-1849-4C0B-BBCD-F4FB84F6FB87','doohickey','2020-10-20 02:30:00',{'temp':'hot!', 'humidity':'dry', 'orientation':'forwards'});
+
+INSERT INTO sensordata(location, dayhour, device_id, device_name, updated, payload)
+VALUES('GHI','2020-10-20 03:00:00','87C5EFE5-1849-4C0B-BBCD-F4FB84F6FB85','doohickey','2020-10-20 03:30:00',{'temp':'hot!', 'humidity':'dry', 'orientation':'backwards'});
+
+INSERT INTO sensordata(location, dayhour, device_id, device_name, updated, payload)
+VALUES('ABC','2020-10-20 03:00:00','87C5EFE5-1849-4C0B-BBCD-F4FB84F6FB78','device1','2020-10-20 03:31:00',{'temp':'freezing!', 'humidity':'low', 'mood':'hungry again'});
+
+INSERT INTO sensordata(location, dayhour, device_id, device_name, updated, payload)
+VALUES('ABC','2020-10-20 03:00:00','87C5EFE5-1849-4C0B-BBCD-F4FB84F6FB78','device1','2020-10-20 03:35:00',{'temp':'freezing!', 'humidity':'low', 'mood':'full'});
+
+INSERT INTO sensordata(location, dayhour, device_id, device_name, updated, payload)
+VALUES('ABC','2020-10-20 03:00:00','87C5EFE5-1849-4C0B-BBCD-F4FB84F6FB78','device1','2020-10-20 03:40:00',{'temp':'freezing!', 'humidity':'low', 'mood':'no, still peckish'});
+
+INSERT INTO sensordata(location, dayhour, device_id, device_name, updated, payload)
+VALUES('DEF','2020-10-20 03:00:00','87C5EFE5-1849-4C0B-BBCD-F4FB84F6FB93','dev4','2020-10-20 03:30:00',{'temp':'/tmp', 'speed':'low'});
+
+INSERT INTO sensordata(location, dayhour, device_id, device_name, updated, payload)
+VALUES('DEF','2020-10-20 03:00:00','87C5EFE5-1849-4C0B-BBCD-F4FB84F6FB93','dev4','2020-10-20 03:40:00',{'temp':'/var/lib/tmp', 'speed':'low', 'color':'green'});
+
+INSERT INTO sensordata(location, dayhour, device_id, device_name, updated, payload)
+VALUES('DEF','2020-10-20 03:00:00','87C5EFE5-1849-4C0B-BBCD-F4FB84F6FB94','dev5','2020-10-20 03:45:00',{'temp':'freezing!', 'humidity':'low', 'mood':'hungry'});
+
+INSERT INTO sensordata(location, dayhour, device_id, device_name, updated, payload)
+VALUES('DEF','2020-10-20 03:00:00','87C5EFE5-1849-4C0B-BBCD-F4FB84F6FB95','dev6','2020-10-20 03:50:00',{'temp':'freezing!', 'humidity':'low', 'mood':'hungry'});
+```
+
+_It is worth pointing out that doing an **INSERT** on a **Map** column like this will **always replace the full map**. In this case, I know that's OK for my use case because I always get a full input file that has all the sensor readings in it. Sometimes, this isn't what you want, and you'll need to use the **SET** keyword to **set a specific value in the map**._
+
+**✅ Step 3d. Execute queries that use device_name, dayhour, and payload map keys using our indexes**
+
+📘 **Command to execute**
+```SQL
+SELECT * FROM sensordata WHERE device_name='doohickey';
+```
+
+📗 **Expected output**
+
+![sensordata where device_name](https://user-images.githubusercontent.com/23346205/97318153-f2c6fc80-1841-11eb-8c77-9aefed902d61.png)
+
+📘 **Command to execute**
+```SQL
+SELECT * FROM sensordata 
+WHERE device_name = 'device1' 
+AND dayhour = '2020-10-20 01:00:00';
+```
+
+📗 **Expected output**
+
+![sensordata where device_name](https://user-images.githubusercontent.com/23346205/97318153-f2c6fc80-1841-11eb-8c77-9aefed902d61.png)
