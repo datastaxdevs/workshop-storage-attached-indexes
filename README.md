@@ -14,8 +14,8 @@ It doesn't matter if you join our workshop live or you prefer to do at your own 
 - Materials used during presentations
 - Hands-on exercises
 - Workshop videos
-  - [First workshop](https://youtu.be/????) [NAM Time]
-  - [Second workshop](https://youtu.be/????) [IST Time]
+  - [First workshop](https://www.youtube.com/watch?v=GLJc1Uz9dqw) [NAM Time]
+  - [Second workshop](https://www.youtube.com/watch?v=yNQYQjXtV30) [IST Time]
 - [Discord chat](https://bit.ly/cassandra-workshop)
 - [Questions and Answers](https://community.datastax.com/)
 
@@ -24,6 +24,7 @@ It doesn't matter if you join our workshop live or you prefer to do at your own 
 | Title  | Description
 |---|---|
 | **Slide deck** | [Slide deck for the workshop](slides/Presentation.pdf) |
+| **Exercise Notebook** | [Exercises in Studio Notebook for Astra](SA_Index_Workshop.tar) |
 | **1. Create your Astra instance** | [Create your Astra instance](#1-create-your-astra-instance) |
 | **2. Getting started with SAI** | [Getting started with SAI](#2-getting-started-with-sai-storage-attached-index) |
 | **3. IoT sensor data model use case** | [IoT sensor data model use case](#3-iot-sensor-data-model-use-case) |
