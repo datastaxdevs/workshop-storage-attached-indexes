@@ -2,13 +2,18 @@
   "name": "Scalable Indexing for Cassandra using DataStax Astra",
   "description": "Welcome to the 'Scalable Indexing for Cassandra using DataStax Astra' workshop! In this two-hour workshop, the Developer Advocate team of DataStax will explain the new Storage Attached Indexing (SAI) feature using Astra, the cloud based Cassandra-as-a-Service platform delivered by DataStax, to demonstrate how you can use them to add some much wanted flexibility to your Cassandra data model by querying outside of primary key fields.",
   "duration": "50 minutes",
-  "skillLevel": "Intermediate",
+  "skillLevel": "Advanced",
+  "language":["CQL"],
+  "stack":["cassandra"],
   "githubUrl": "https://github.com/datastaxdevs/workshop-storage-attached-indexes",
-  "youtubeUrl": "https://www.youtube.com/watch?v=GLJc1Uz9dqw",
+  "badge": "https://media.badgr.com/uploads/badges/2d92d254-5275-4e39-b59a-23d70b101f0c.png",
+  "youTubeUrl": [ "https://www.youtube.com/watch?v=GLJc1Uz9dqw"],
   "tags": [
-    { "name": "workshop" }
+    { "name": "workshop" },
+    { "name":"cassandra" },
+    { "name":"search" },
+    { "name":"sai" }
   ],
   "category": "workshop",
-  "priority": 2,
-  "heroImage": "https://user-images.githubusercontent.com/23346205/96910093-f5ee7100-146c-11eb-9cfb-06ea3732c2bd.png"
+  "usecases": ["search"]
 }
